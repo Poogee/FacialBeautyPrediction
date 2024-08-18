@@ -20,8 +20,8 @@ transform = transforms.Compose([
     transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])  # https://stackoverflow.com/questions/58151507/why-pytorch-officially-use-mean-0-485-0-456-0-406-and-std-0-229-0-224-0-2
 ])
 
-def PrintBeautyScore(image):
-    image = transform(image)
+def PrintBeautyScore(sub_frame):
+    image = transform(Image.fromarray(sub_frame,"RGB"))
     print(model(image.unsqueeze(0)).data[0][0])
 
 
@@ -33,17 +33,22 @@ if not cap.isOpened():
     print("bruh, dead camera")
     exit()
 
+#for delay of printing beauty score
+skip_count = 0
 
 while True:
     ret, frame = cap.read()
-    
+    skip_count += 1
+    # print(skip_count)
 
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
     
     for (x, y, w, h) in faces:
         cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
-    print(frame)
+        if skip_count >= 100:
+            skip_count = 0
+            PrintBeautyScore(frame[y:(y+h), x:(x+h)])
     cv2.imshow('Face Detection', frame)   
 
     if cv2.waitKey(1) == ord('q'):
