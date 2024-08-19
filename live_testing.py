@@ -3,17 +3,22 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import models, transforms
-from torchvision.models import resnet18
+from torchvision.models import resnet50, ResNet50_Weights
 from torch.utils.data import DataLoader, TensorDataset
 from PIL import Image
 import pandas as pd 
 import os
 
-model = resnet18(pretrained=False)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+model = resnet50()
+model = model.to(device)
 num_ftrs = model.fc.in_features
 model.fc = nn.Linear(num_ftrs, 1)
-model.load_state_dict(torch.load("resnet18_finetuned.pth"))
-scale_k = 0.2
+model.load_state_dict(torch.load("resnet50_finetuned.pth",map_location=torch.device('cpu'))) #питон попросил сделать это на маке, на компе убрать надо будет map_location...
+model.eval()
+
+scale_k = 0.3
 
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
@@ -23,7 +28,7 @@ transform = transforms.Compose([
 
 def PrintBeautyScore(sub_frame):
     image = transform(Image.fromarray(sub_frame,"RGB"))
-    print(model(image.unsqueeze(0)).data[0][0])
+    print(model(image.unsqueeze(0)).item())
 
 
 face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
@@ -46,12 +51,12 @@ while True:
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
     
     for (x, y, w, h) in faces:
-        bottom = max(0,y-h*scale_k)
-        up = min(cap.get(4), y + h * scale_k)
-        left = max(0, x - w * scale_k)
-        right = min(cap.get(3), x + w * scale_k)
+        bottom = int(max(0,y-h*scale_k))
+        up = int(min(cap.get(4), y + h * (1 + scale_k)))
+        left = int(max(0, x - w * scale_k))
+        right = int(min(cap.get(3), x + w * (1 + scale_k)))
         cv2.rectangle(frame, (left, bottom), (right, up), (255, 0, 0), 2)
-        if skip_count >= 100:
+        if skip_count >= 50:
             skip_count = 0
             PrintBeautyScore(frame[bottom:up, left:right])
             
