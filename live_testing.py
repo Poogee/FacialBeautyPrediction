@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import models, transforms
-from torchvision.models import resnet50, ResNet50_Weights
+from torchvision.models import resnet50, ResNet50_Weights, resnet18
 from torch.utils.data import DataLoader, TensorDataset
 from PIL import Image
 import pandas as pd 
@@ -11,11 +11,11 @@ import os
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-model = resnet50()
+model = resnet18()
 model = model.to(device)
 num_ftrs = model.fc.in_features
 model.fc = nn.Linear(num_ftrs, 1)
-model.load_state_dict(torch.load("resnet50_finetuned.pth",map_location=torch.device('cpu'))) #питон попросил сделать это на маке, на компе убрать надо будет map_location...
+model.load_state_dict(torch.load("resnet18_finetuned.pth",map_location=torch.device('cpu'))) #питон попросил сделать это на маке, на компе убрать надо будет map_location...
 model.eval()
 
 scale_k = 0.3
