@@ -13,6 +13,7 @@ model = resnet18(pretrained=False)
 num_ftrs = model.fc.in_features
 model.fc = nn.Linear(num_ftrs, 1)
 model.load_state_dict(torch.load("resnet18_finetuned.pth"))
+scale_k = 0.2
 
 transform = transforms.Compose([
     transforms.Resize((224, 224)),
@@ -45,10 +46,15 @@ while True:
     faces = face_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5, minSize=(30, 30))
     
     for (x, y, w, h) in faces:
-        cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
+        bottom = max(0,y-h*scale_k)
+        up = min(cap.get(4), y + h * scale_k)
+        left = max(0, x - w * scale_k)
+        right = min(cap.get(3), x + w * scale_k)
+        cv2.rectangle(frame, (left, bottom), (right, up), (255, 0, 0), 2)
         if skip_count >= 100:
             skip_count = 0
-            PrintBeautyScore(frame[y:(y+h), x:(x+h)])
+            PrintBeautyScore(frame[bottom:up, left:right])
+            
     cv2.imshow('Face Detection', frame)   
 
     if cv2.waitKey(1) == ord('q'):
